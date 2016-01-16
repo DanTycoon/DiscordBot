@@ -695,13 +695,13 @@ bot.on("message", function (msg) {
         }
     }
 });
- 
 
 //Log user status changes
 bot.on("presence", function(user,status,gameId) {
 	//if(status === "online"){
 	//console.log("presence update");
 	console.log(user+" went "+status);
+	print_userstate(user,status,gameId);
 	//}
 	try{
 	if(status != 'offline'){
@@ -753,4 +753,53 @@ function get_gif(tags, func) {
         }.bind(this));
     }
 
+	
+var userStateHistory = {};
+
+function print_userstate(user,status,gameId) {
+	console.log(gameId);
+	var channel = "137429145901596673"; // statuslog channel
+	var now = new Date();
+	var zeroPad = function (num) {
+		if (num < 10) {
+			return "0" + num;
+		} else {
+			return "" + num;
+		}
+	}
+	var nowString = (now.getMonth() + 1) + "/" + now.getDate() + "/" + now.getFullYear() + " ";
+	nowString += (now.getHours() % 12 != 0) ? (now.getHours() % 12) : (12);
+	nowString += ":" + zeroPad(now.getMinutes()) + ":" + zeroPad(now.getSeconds());
+	if(now.getHours() >= 12) {
+		nowString += " PM";
+	} else {
+		nowString += " AM";
+	}
+	
+	/*if(status == "online") {
+		bot.sendMessage(channel, nowString + " - " + user.username + " came online.");
+	} else if (status == "offline") {
+		bot.sendMessage(channel, nowString + " - " + user.username + " went offline.");
+	} else if (status == "away") {
+		bot.sendMessage(channel, nowString + " - " + user.username + " went away.");
+	} else {
+		bot.sendMessage(channel, nowString + " - " + user.username + " went " + status);
+	}*/
+	
+	if(status != "idle") {
+		if(userStateHistory[user.username] != undefined) {
+			// Only send message if they are coming online from being offline. Ignore returning from away or going away
+			if(status == "online" && userStateHistory[user.username] == "idle") {
+				return;
+			}
+			
+			bot.sendMessage(channel, nowString + " - " + user.username + " is now " + status + ". (Was " + userStateHistory[user.username] + ")");
+		} else {
+			bot.sendMessage(channel, nowString + " - " + user.username + " is now " + status + ".");
+		}
+	}
+	
+	userStateHistory[user.username] = status;
+}
+	
 bot.login(AuthDetails.email, AuthDetails.password);
