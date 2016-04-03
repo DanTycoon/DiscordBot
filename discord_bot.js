@@ -462,7 +462,14 @@ var commands = {
             else if (suffix.split("d").length > 1) {
                 var eachDie = suffix.split("+");
                 var passing = 0;
-                bot.sendMessage(msg.channel,msg.author + " rolled a " + d20.roll(suffix));
+                for (var i = 0; i < eachDie.length; i++){
+					passing += 1;
+                }
+                if (passing == eachDie.length) {
+                    bot.sendMessage(msg.channel,msg.author + " rolled a " + d20.roll(suffix));
+                }  else {
+                    bot.sendMessage(msg.channel,msg.author + " tried to roll too many dice at once!");
+                }
             }
         }
     },
