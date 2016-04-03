@@ -462,16 +462,7 @@ var commands = {
             else if (suffix.split("d").length > 1) {
                 var eachDie = suffix.split("+");
                 var passing = 0;
-                for (var i = 0; i < eachDie.length; i++){
-                    if (eachDie[i].split("d")[0] < 5000) {
-                        passing += 1;
-                    };
-                }
-                if (passing == eachDie.length) {
-                    bot.sendMessage(msg.channel,msg.author + " rolled a " + d20.roll(suffix));
-                }  else {
-                    bot.sendMessage(msg.channel,msg.author + " tried to roll too many dice at once!");
-                }
+                bot.sendMessage(msg.channel,msg.author + " rolled a " + d20.roll(suffix));
             }
         }
     },
