@@ -463,7 +463,7 @@ var commands = {
                 var eachDie = suffix.split("+");
                 var passing = 0;
                 for (var i = 0; i < eachDie.length; i++){
-                    if (eachDie[i].split("d")[0] < 50) {
+                    if (eachDie[i].split("d")[0] < 5000) {
                         passing += 1;
                     };
                 }
