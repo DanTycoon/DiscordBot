@@ -12,7 +12,7 @@ exports.talk = {
 	process : function(bot,msg, suffix) {
 			var conv = suffix.split(" ");
 			talkbot.write(conv, function (response) {
-			bot.sendMessage(msg.channel, response.message)
+				bot.sendMessage(msg.channel, response.message)
 			})
 	}
 }
