@@ -1,6 +1,8 @@
 try {
 	var Discord = require("discord.js");
 } catch (e){
+	console.log(e.stack);
+	console.log(process.version);
 	console.log("Please run npm install and ensure it passes with no errors!");
 	process.exit();
 }
@@ -23,7 +25,7 @@ try {
 try {
 	var AuthDetails = require("./auth.json");
 } catch (e){
-	console.log("Please create an auth.json like auth.json.example with at least an email and password.");
+	console.log("Please create an auth.json like auth.json.example with at least an email and password.\n"+e.stack);
 	process.exit();
 }
 
@@ -61,7 +63,11 @@ try{
 
 var qs = require("querystring");
 
+var d20 = require("d20");
+
 var htmlToText = require('html-to-text');
+
+var startTime = Date.now();
 
 var giphy_config = {
     "api_key": "dc6zaTOxFJmzC",
@@ -447,15 +453,28 @@ var commands = {
 		}
 	},
 	"roll": {
-		usage: "[max value]",
-		description: "returns a random number between 1 and max value. If no max is specified it is 10",
-		process: function(bot,msg,suffix) {
-			var max = 10;
-			if(suffix) max = suffix;
-			var val = Math.floor(Math.random() * max) + 1;
-			bot.sendMessage(msg.channel,msg.author + " rolled a " + val);
-		}
-	},
+        usage: "[# of sides] or [# of dice]d[# of sides]( + [# of dice]d[# of sides] + ...)",
+        description: "roll one die with x sides, or multiple dice using d20 syntax. Default value is 10",
+        process: function(bot,msg,suffix) {
+            if (suffix.split("d").length <= 1) {
+                bot.sendMessage(msg.channel,msg.author + " rolled a " + d20.roll(suffix || "10"));
+            }  
+            else if (suffix.split("d").length > 1) {
+                var eachDie = suffix.split("+");
+                var passing = 0;
+                for (var i = 0; i < eachDie.length; i++){
+                    if (eachDie[i].split("d")[0] < 50) {
+                        passing += 1;
+                    };
+                }
+                if (passing == eachDie.length) {
+                    bot.sendMessage(msg.channel,msg.author + " rolled a " + d20.roll(suffix));
+                }  else {
+                    bot.sendMessage(msg.channel,msg.author + " tried to roll too many dice at once!");
+                }
+            }
+        }
+    },
 	"msg": {
 		usage: "<user> <message to leave user>",
 		description: "leaves a message for a user the next time they come online",
@@ -517,7 +536,48 @@ var commands = {
 				}
 			});
 		}
+	},
+    "watchtogether": {
+        usage: "[video url (Youtube, Vimeo)",
+        description: "Generate a watch2gether room with your video to watch with your little friends!",
+        process: function(bot,msg,suffix){
+            var watch2getherUrl = "https://www.watch2gether.com/go#";
+            bot.sendMessage(msg.channel,
+                "watch2gether link",function(){
+                    bot.sendMessage(msg.channel,watch2getherUrl + suffix)
+                })
+        }
+    },
+    "uptime": {
+    	usage: "",
+	description: "returns the amount of time since the bot started",
+	process: function(bot,msg,suffix){
+		var now = Date.now();
+		var msec = now - startTime;
+		console.log("Uptime is " + msec + " milliseconds");
+		var days = Math.floor(msec / 1000 / 60 / 60 / 24);
+		msec -= days * 1000 * 60 * 60 * 24;
+		var hours = Math.floor(msec / 1000 / 60 / 60);
+		msec -= hours * 1000 * 60 * 60;
+		var mins = Math.floor(msec / 1000 / 60);
+		msec -= mins * 1000 * 60;
+		var secs = Math.floor(msec / 1000);
+		var timestr = "";
+		if(days > 0) {
+			timestr += days + " days ";
+		}
+		if(hours > 0) {
+			timestr += hours + " hours ";
+		}
+		if(mins > 0) {
+			timestr += mins + " minutes ";
+		}
+		if(secs > 0) {
+			timestr += secs + " seconds ";
+		}
+		bot.sendMessage(msg.channel,"Uptime: " + timestr);
 	}
+    }
 };
 try{
 var rssFeeds = require("./rss.json");
@@ -558,35 +618,6 @@ function updateMessagebox(){
 	require("fs").writeFile("./messagebox.json",JSON.stringify(messagebox,null,2), null);
 }
 
-var fs = require('fs'),
-	path = require('path');
-function getDirectories(srcpath) {
-	return fs.readdirSync(srcpath).filter(function(file) {
-		return fs.statSync(path.join(srcpath, file)).isDirectory();
-	});
-}
-function load_plugins(){
-	var plugin_folders = getDirectories("./plugins");
-	for (var i = 0; i < plugin_folders.length; i++) {
-		var plugin;
-		try{
-			var plugin = require("./plugins/" + plugin_folders[i])
-		} catch (err){
-			console.log("Improper setup of the '" + plugin_folders[i] +"' plugin. : " + err);
-		}
-		if (plugin){
-			if("commands" in plugin){
-				for (var j = 0; j < plugin.commands.length; j++) {
-					if (plugin.commands[j] in plugin){
-						commands[plugin.commands[j]] = plugin[plugin.commands[j]];
-					}
-				}
-			}
-		}
-	}
-	console.log("Loaded " + Object.keys(commands).length + " chat commands type !help in Discord for a commands list.")
-}
-
 function rssfeed(bot,msg,url,count,full){
     var FeedParser = require('feedparser');
     var feedparser = new FeedParser();
@@ -622,7 +653,7 @@ var bot = new Discord.Client();
 bot.on("ready", function () {
     loadFeeds();
 	console.log("Ready to begin! Serving in " + bot.channels.length + " channels");
-	load_plugins();
+	require("./plugins.js").init();
 });
 
 bot.on("disconnected", function () {
@@ -649,6 +680,7 @@ bot.on("message", function (msg) {
         }
 		alias = aliases[cmdTxt];
 		if(alias){
+			console.log(cmdTxt + " is an alias, constructed command is " + alias.join(" ") + " " + suffix);
 			cmdTxt = alias[0];
 			suffix = alias[1] + " " + suffix;
 		}
@@ -752,6 +784,16 @@ function get_gif(tags, func) {
             }
         }.bind(this));
     }
+exports.addCommand = function(commandName, commandObject){
+    try {
+        commands[commandName] = commandObject;
+    } catch(err){
+        console.log(err);
+    }
+}
+exports.commandCount = function(){
+    return Object.keys(commands).length;
+}
 
 	
 var userStateHistory = {};
