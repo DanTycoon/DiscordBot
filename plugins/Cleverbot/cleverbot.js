@@ -13,7 +13,7 @@ exports.talk = {
 			var conv = suffix.split(" ");
 			talkbot.write(conv, function (response) {
 				// Handle unicode
-				if(response.message.startsWith("|")) {
+				if(response.message[0] == "|") {
 					response.message = response.message.split("|").map(function(x) {return String.fromCharCode(parseInt(x, 16)); }).join("");
 				}
 				
