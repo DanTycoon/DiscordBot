@@ -314,7 +314,7 @@ var commands = {
 			}
             if(!channel){
 				var channels = bot.channels.getAll("name",suffix);
-				if(channels.length > 1){https://github.com/chalda/DiscordBot/issues/new
+				if(channels.length > 1){
 					var response = "Multiple channels match, please use id:";
 					for(var i=0;i<channels.length;i++){
 						response += channels[i] + ": " + channels[i].id;
@@ -741,6 +741,15 @@ bot.on("message", function (msg) {
         
         if (msg.author != bot.user && msg.isMentioned(bot.user)) {
                 bot.sendMessage(msg.channel,msg.author + ", you called?");
+        }
+        
+        // Funny things the bot can do
+        if (msg.content.toLowerCase() == "ayy") {
+            if (Math.random() < 0.01) {
+                bot.sendMessage(msg.channel, "Fuck you");
+            } else {
+                bot.sendMessage(msg.channel, "lmao");
+            }
         }
     }
 });
